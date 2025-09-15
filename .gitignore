@@ -399,3 +399,35 @@ FodyWeavers.xsd
 
 # JetBrains Rider
 *.sln.iml
+
+# Large model files
+*.gguf
+vosk-model-*
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Temporary files
+*.tmp
+*.temp
+debug_audio.wav
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Environment variables
+.env
+.secrets
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE files
+.idea/
+.vscode/
