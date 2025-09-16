@@ -2,16 +2,25 @@ from sarcastic_ai import SarcasticAI
 from voice_listener import VoiceListener
 from vocabulary_manager import VocabularyManager
 import time
+import os
 
 def main():
+    # Define the base directory of the project
+    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+    # Define paths to models and data
+    llama_model_path = os.path.join(base_dir, "models", "mistral-7b-instruct-v0.2.Q4_K_M.gguf")
+    vosk_model_path = os.path.join(base_dir, "models", "vosk-model-en-us-0.22")
+    db_path = os.path.join(base_dir, "data", "vocabulary.db")
+
     start_time = time.time()
-    ai = SarcasticAI()
-    listener = VoiceListener()
-    vocab_manager = VocabularyManager()
+    ai = SarcasticAI(model_path=llama_model_path)
+    listener = VoiceListener(model_path=vosk_model_path)
+    vocab_manager = VocabularyManager(db_path=db_path)
     print(f"System initialized in {time.time() - start_time:.2f}s")
-    
+
     print("\n--- M.A.R.S. Initialized ---")
-    
+
     print("Generating boot line...")
     boot_start = time.time()
     boot_line = ai.generate_dynamic_line("boot")
@@ -27,7 +36,7 @@ def main():
 
             if user_speech:
                 print(f"\nYou said: '{user_speech}' (transcribed in {listen_time:.2f}s)")
-                
+
                 vocab_start = time.time()
                 vocab_manager.log_phrase(user_speech)
                 print(f"Vocabulary logged in {time.time() - vocab_start:.2f}s")
@@ -43,15 +52,15 @@ def main():
                 else:
                     print("AI is thinking...")
                     response_start = time.time()
-                    
+
                     user_patterns = vocab_manager.get_user_speech_patterns()
                     print(f"User patterns detected: {user_patterns}")
-                    
+
                     text_response = ai.generate_response(user_speech, user_patterns)
                     response_time = time.time() - response_start
-                    
+
                     print(f"AI: {text_response} (total response time: {response_time:.2f}s)")
-                    
+
                     speak_start = time.time()
                     ai.speak(text_response)
                     speak_time = time.time() - speak_start

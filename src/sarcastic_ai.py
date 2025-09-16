@@ -32,7 +32,7 @@ class SarcasticAI:
             prompt = f"[INST] {self.system_prompt}\n\nGenerate a sarcastic, witty boot-up line for MARS. Keep it under 2 sentences. [/INST]\nMARS:"
         else:
             prompt = f"[INST] {self.system_prompt}\n\nGenerate a sarcastic, witty shutdown line for MARS. Keep it under 2 sentences. [/INST]\nMARS:"
-        
+
         output = self.llm(
             prompt,
             max_tokens=100,
@@ -44,18 +44,18 @@ class SarcasticAI:
 
     def generate_response(self, user_input, speech_patterns=None):
         start_time = time.time()
-        
+
         history_string = ""
         for message in self.history[-4:]:
             role = "User" if message["role"] == "user" else "MARS"
             history_string += f"{role}: {message['content']}\n"
-        
+
         pattern_prompt = ""
         if speech_patterns:
             pattern_prompt = f"\nNote: The user tends to use these words/phrases: {speech_patterns}. Incorporate some of these naturally into your response to mock their speech patterns."
-        
+
         prompt = f"[INST] {self.system_prompt}{pattern_prompt}\n\n{history_string}User: {user_input} [/INST]\nMARS:"
-        
+
         output = self.llm(
             prompt,
             max_tokens=150,
@@ -63,9 +63,9 @@ class SarcasticAI:
             temperature=0.7,
             echo=False
         )
-        
+
         response_text = output['choices'][0]['text'].strip()
-            
+
         self.history.append({"role": "user", "content": user_input})
         self.history.append({"role": "assistant", "content": response_text})
         self.history = self.history[-6:]
@@ -78,28 +78,28 @@ class SarcasticAI:
         try:
             with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as temp_audio_file:
                 temp_file_path = temp_audio_file.name
-            
+
             self.tts.tts_to_file(
                 text=text_to_speak,
                 file_path=temp_file_path,
                 speaker="Ana Florence",
                 language="en"
             )
-            
+
             tts_time = time.time() - start_time
             print(f"TTS generated in {tts_time:.2f}s")
-            
+
             # Add delay before playing to ensure file is fully written
             time.sleep(0.5)
             playsound(temp_file_path, block=True)
-            
+
             for _ in range(5):
                 try:
                     os.remove(temp_file_path)
                     break
                 except PermissionError:
                     time.sleep(0.1)
-                    
+
         except Exception as e:
             print(f"Error during speech synthesis: {e}")
             if 'temp_file_path' in locals() and os.path.exists(temp_file_path):

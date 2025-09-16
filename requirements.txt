@@ -1,0 +1,9 @@
+llama-cpp-python
+TTS==0.22.0
+playsound==1.2.2
+torch==2.3.1
+torchvision==0.18.1
+pyaudio
+vosk
+numpy
+transformers==4.36.2

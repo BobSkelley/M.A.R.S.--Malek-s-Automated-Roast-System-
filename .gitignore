@@ -431,3 +431,4 @@ Thumbs.db
 # IDE files
 .idea/
 .vscode/
+.venv/
