@@ -5,6 +5,8 @@ from TTS.api import TTS
 from playsound import playsound
 import torch
 import tempfile
+import numpy as np
+import soundfile as sf
 
 class SarcasticAI:
     def __init__(self, model_path="mistral-7b-instruct-v0.2.Q4_K_M.gguf"):
@@ -13,14 +15,16 @@ class SarcasticAI:
         self.llm = Llama(
             model_path=model_path,
             n_ctx=4096,
-            n_gpu_layers=35,
-            verbose=False
+            n_gpu_layers=-1,  # Offload all layers to GPU
+            verbose=False,
+            n_threads=6 # Optimized for your i7-13700H P-cores
         )
         print(f"LLaMA model loaded in {time.time() - start_time:.2f}s")
 
         print("Loading Coqui XTTS model...")
         start_time = time.time()
         device = "cuda" if torch.cuda.is_available() else "cpu"
+        print(f"TTS will run on: {device.upper()}")
         self.tts = TTS("tts_models/multilingual/multi-dataset/xtts_v2").to(device)
         print(f"Coqui TTS model loaded in {time.time() - start_time:.2f}s")
 
@@ -75,38 +79,44 @@ class SarcasticAI:
 
     def speak(self, text_to_speak):
         start_time = time.time()
+        temp_file_path = None  # Initialize to None
         try:
-            with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as temp_audio_file:
-                temp_file_path = temp_audio_file.name
-
-            self.tts.tts_to_file(
+            # Generate audio in memory
+            wav_output = self.tts.tts(
                 text=text_to_speak,
-                file_path=temp_file_path,
                 speaker="Ana Florence",
                 language="en"
             )
 
+            # Convert to a NumPy array
+            audio_array = np.array(wav_output, dtype=np.float32)
+
+            # Save the in-memory audio to a temporary file
+            with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as temp_audio_file:
+                temp_file_path = temp_audio_file.name
+                sf.write(temp_file_path, audio_array, self.tts.synthesizer.output_sample_rate)
+
             tts_time = time.time() - start_time
             print(f"TTS generated in {tts_time:.2f}s")
-
-            # Add delay before playing to ensure file is fully written
+            
+            # Delay to prevent the first word from being cut off
             time.sleep(0.5)
             playsound(temp_file_path, block=True)
 
-            for _ in range(5):
-                try:
-                    os.remove(temp_file_path)
-                    break
-                except PermissionError:
-                    time.sleep(0.1)
-
         except Exception as e:
             print(f"Error during speech synthesis: {e}")
-            if 'temp_file_path' in locals() and os.path.exists(temp_file_path):
-                try:
-                    os.remove(temp_file_path)
-                except:
-                    pass
+        finally:
+            if temp_file_path and os.path.exists(temp_file_path):
+                for _ in range(5):
+                    try:
+                        os.remove(temp_file_path)
+                        break
+                    except PermissionError:
+                        time.sleep(0.1)
+                    except Exception as e:
+                        print(f"Error removing temp file: {e}")
+                        break
+
 
     def cleanup(self):
         pass

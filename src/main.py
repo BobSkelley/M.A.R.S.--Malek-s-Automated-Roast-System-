@@ -1,3 +1,6 @@
+import warnings
+warnings.filterwarnings("ignore", category=FutureWarning)
+
 from sarcastic_ai import SarcasticAI
 from voice_listener import VoiceListener
 from vocabulary_manager import VocabularyManager
@@ -65,8 +68,7 @@ def main():
                     ai.speak(text_response)
                     speak_time = time.time() - speak_start
                     print(f"Speech synthesized in {speak_time:.2f}s")
-            else:
-                print("No speech detected. Please try again.")
+            # Removed the else block that printed "No speech detected"
 
     except KeyboardInterrupt:
         print("\nForce shutdown initiated.")
